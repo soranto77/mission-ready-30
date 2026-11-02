@@ -31,7 +31,7 @@ const D=[
 ["Taper","Freshness","10–15 min easy walk","Light mobility only","Fresh legs and core"],
 ["Final Mission","Retest","5 min progressive walk","60 sec bodyweight squats — stop before form breaks|60 sec step-ups at controlled pace|Plank up to 45 sec with normal brace|6 min brisk walk","Compare with Day 1 without chasing exhaustion"]];
 const PHYS_OLD=[1,3,8,10,15,17,22,24,29]; const PHYS_NEW=[6,13,20,27]; const PHYS=[...new Set([...PHYS_OLD,...PHYS_NEW])];
-const K='mr30';let S=JSON.parse(localStorage.getItem(K)||'null')||{done:[],sel:1,n:{},p:{},t:{},completedOn:{}};S.completedOn=S.completedOn||{};const save=()=>localStorage.setItem(K,JSON.stringify(S));const localDay=(d=new Date())=>{let y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),a=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${a}`};const dayDiff=(a,b)=>Math.round((new Date(a+'T12:00:00')-new Date(b+'T12:00:00'))/86400000);function streak(){let ds=[...new Set(Object.values(S.completedOn))].sort();if(!ds.length)return 0;let last=ds[ds.length-1],today=localDay(),y=new Date();y.setDate(y.getDate()-1);let yesterday=localDay(y);if(last!==today&&last!==yesterday)return 0;let q=1;for(let i=ds.length-1;i>0;i--){if(dayDiff(ds[i],ds[i-1])===1)q++;else break}return q}const unlock=n=>n==1||S.done.includes(n-1)||S.done.includes(n);function nav(){let x='';D.forEach((d,i)=>{let n=i+1;x+=`<button class="d ${S.done.includes(n)?'done':''} ${S.sel==n?'on':''} ${unlock(n)?'':'lock'}" onclick="pick(${n})">${S.done.includes(n)?'✓':n}</button>`});navEl.innerHTML=x;c.textContent=S.done.length;s.textContent=streak();b.style.width=S.done.length/30*100+'%'}function pick(n){if(unlock(n)){S.sel=n;save();render()}}function list(s){return s==='Completed'?'<p class=muted>Completed before baseline reset.</p>':'<ul>'+s.split('|').map(x=>'<li>'+x+'</li>').join('')+'</ul>'}function rehabPanel(n){
+const K='mr30';let S=JSON.parse(localStorage.getItem(K)||'null')||{};S.done=Array.isArray(S.done)?S.done:[];S.sel=Number.isInteger(S.sel)&&S.sel>=1&&S.sel<=30?S.sel:1;S.n=S.n||{};S.p=S.p||{};S.t=S.t||{};S.completedOn=S.completedOn||{};const save=()=>localStorage.setItem(K,JSON.stringify(S));const localDay=(d=new Date())=>{let y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),a=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${a}`};const dayDiff=(a,b)=>Math.round((new Date(a+'T12:00:00')-new Date(b+'T12:00:00'))/86400000);function streak(){let ds=[...new Set(Object.values(S.completedOn))].sort();if(!ds.length)return 0;let last=ds[ds.length-1],today=localDay(),y=new Date();y.setDate(y.getDate()-1);let yesterday=localDay(y);if(last!==today&&last!==yesterday)return 0;let q=1;for(let i=ds.length-1;i>0;i--){if(dayDiff(ds[i],ds[i-1])===1)q++;else break}return q}const unlock=n=>n==1||S.done.includes(n-1)||S.done.includes(n);function nav(){let x='';D.forEach((d,i)=>{let n=i+1;x+=`<button class="d ${S.done.includes(n)?'done':''} ${S.sel==n?'on':''} ${unlock(n)?'':'lock'}" onclick="pick(${n})">${S.done.includes(n)?'✓':n}</button>`});navEl.innerHTML=x;c.textContent=S.done.length;s.textContent=streak();b.style.width=S.done.length/30*100+'%'}function pick(n){if(unlock(n)){S.sel=n;save();render()}}function list(s){return s==='Completed'?'<p class=muted>Completed before baseline reset.</p>':'<ul>'+s.split('|').map(x=>'<li>'+x+'</li>').join('')+'</ul>'}function rehabPanel(n){
   const isA=PHYS_OLD.includes(n), isB=PHYS_NEW.includes(n);
   const label=isA?'PHYSIO A TODAY':isB?'PHYSIO B TODAY':'PHYSIO REFERENCE';
   return `<div class=phase>LATEST PHYSIO PLAN</div>
@@ -70,5 +70,53 @@ function physio(n){
   if(PHYS_NEW.includes(n)) return '<div class=physio><b>PHYSIO B TODAY</b><p>Complete the new three-exercise add-on block shown above. This sits between your two existing-program sessions.</p></div>';
   return '';
 }
-function render(){nav();let n=S.sel,d=D[n-1],pain=S.p[n]||'',note=S.n[n]||'',target=S.t[n]||d[4],tag=(PHYS_OLD.includes(n)||PHYS_NEW.includes(n))?'<span class=badge>PHYSIO</span>':'';let base=n===1?'<div class=baseline><b>Baseline interpretation:</b> You demonstrated decent absolute strength, but the combined squat/lunge/step-up/plank volume was too much after a long lay-off. The reset targets work capacity and recovery first. Weighted “Robin reps” are paused for now.</div>':'';document.querySelector('#rehab').innerHTML=rehabPanel(n);lesson.innerHTML=`<div class=phase>DAY ${n} / 30 ${tag}</div><h2>${d[0]}</h2><div class=muted>${d[1]}</div>${base}<h3>WARM-UP</h3>${list(d[2])}<h3>MAIN MISSION</h3>${list(d[3])}${physio(n)}<h3>READINESS CHECK</h3><div class=pain><button data-p=g class="${pain=='g'?'sel':''}">🟢 Good</button><button data-p=a class="${pain=='a'?'sel':''}">🟠 Modify</button><button data-p=r class="${pain=='r'?'sel':''}">🔴 Recover</button></div><div class=tiny style="margin-top:10px">If soreness is still making normal movement difficult, choose Recover and repeat an easy day rather than forcing the schedule. For wrist/elbow rehab, keep symptoms low and return to your normal baseline within 24 hours.</div><h3>AFTER-ACTION REVIEW</h3><textarea id=note placeholder="What did you notice?">${note}</textarea><h3>TOMORROW'S TARGET</h3><input id=target value="${target.replace(/"/g,'&quot;')}"><button class=go id=go>${S.done.includes(n)?'MISSION COMPLETED ✓':'COMPLETE MISSION'}</button>`;document.querySelectorAll('.pain button').forEach(x=>x.onclick=()=>{S.p[n]=x.dataset.p;save();render()});note.oninput=e=>{S.n[n]=e.target.value;save()};target.oninput=e=>{S.t[n]=e.target.value;save()};go.onclick=()=>{if(!S.done.includes(n)){S.done.push(n);S.completedOn[n]=localDay()}else if(!S.completedOn[n]){S.completedOn[n]=localDay()}if(n<30)S.sel=n+1;save();render()}}const navEl=document.querySelector('#nav'),lesson=document.querySelector('#lesson'),c=document.querySelector('#c'),s=document.querySelector('#s'),b=document.querySelector('#b');render();
+function render(){
+  nav();
+  const n=S.sel;
+  const d=D[n-1]||D[0];
+  const pain=S.p[n]||'';
+  const noteValue=S.n[n]||'';
+  const targetValue=S.t[n]||d[4]||'';
+  const tag=(PHYS_OLD.includes(n)||PHYS_NEW.includes(n))?'<span class="badge">PHYSIO</span>':'';
+  const base=n===1?'<div class="baseline"><b>Baseline interpretation:</b> You demonstrated decent absolute strength, but the combined squat/lunge/step-up/plank volume was too much after a long lay-off. The reset targets work capacity and recovery first. Weighted “Robin reps” are paused for now.</div>':'';
+
+  rehabEl.innerHTML=rehabPanel(n);
+  lessonEl.innerHTML=`<div class="phase">DAY ${n} / 30 ${tag}</div><h2>${d[0]}</h2><div class="muted">${d[1]}</div>${base}<h3>WARM-UP</h3>${list(d[2])}<h3>MAIN MISSION</h3>${list(d[3])}${physio(n)}<h3>READINESS CHECK</h3><div class="pain"><button data-p="g" class="${pain==='g'?'sel':''}">🟢 Good</button><button data-p="a" class="${pain==='a'?'sel':''}">🟠 Modify</button><button data-p="r" class="${pain==='r'?'sel':''}">🔴 Recover</button></div><div class="tiny" style="margin-top:10px">If soreness is still making normal movement difficult, choose Recover and repeat an easy day rather than forcing the schedule. For wrist/elbow rehab, keep symptoms low and return to your normal baseline within 24 hours.</div><h3>AFTER-ACTION REVIEW</h3><textarea id="note" placeholder="What did you notice?">${noteValue}</textarea><h3>TOMORROW'S TARGET</h3><input id="target" value="${String(targetValue).replace(/"/g,'&quot;')}"><button class="go" id="go">${S.done.includes(n)?'MISSION COMPLETED ✓':'COMPLETE MISSION'}</button>`;
+
+  lessonEl.querySelectorAll('.pain button').forEach(btn=>{
+    btn.onclick=()=>{S.p[n]=btn.dataset.p;save();render()};
+  });
+
+  const noteEl=lessonEl.querySelector('#note');
+  const targetEl=lessonEl.querySelector('#target');
+  const goEl=lessonEl.querySelector('#go');
+
+  if(noteEl) noteEl.oninput=e=>{S.n[n]=e.target.value;save()};
+  if(targetEl) targetEl.oninput=e=>{S.t[n]=e.target.value;save()};
+  if(goEl) goEl.onclick=()=>{
+    if(!S.done.includes(n)){
+      S.done.push(n);
+      S.completedOn[n]=localDay();
+    } else if(!S.completedOn[n]){
+      S.completedOn[n]=localDay();
+    }
+    if(n<30) S.sel=n+1;
+    save();
+    render();
+  };
+}
+
+const navEl=document.querySelector('#nav');
+const lessonEl=document.querySelector('#lesson');
+const rehabEl=document.querySelector('#rehab');
+const c=document.querySelector('#c');
+const s=document.querySelector('#s');
+const b=document.querySelector('#b');
+
+try{
+  render();
+}catch(err){
+  console.error(err);
+  if(rehabEl) rehabEl.innerHTML='<div class="phase">APP ERROR</div><p class="tiny">A saved-data or rendering error occurred. Refresh the page. If this remains, the app code needs repair.</p>';
+}
 </script></body></html>
